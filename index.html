@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DB QUEST 2.0 | Automated Gamification & Analytics Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+:root {
+  --bg:#060d17;--panel:#0d1829;--panel2:#12223a;--text:#eef6ff;--muted:#8fa3bf;
+  --primary:#38bdf8;--secondary:#818cf8;--accent:#f59e0b;--danger:#f43f5e;
+  --success:#10b981;--border:#1e324d;--shadow:0 20px 50px rgba(0,0,0,.4);
+  --gold:#fbbf24;--font-sans:'Plus Jakarta Sans',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;touch-action:manipulation;margin:0;padding:0}
+body{font-family:var(--font-sans);background:radial-gradient(circle at 10% 0%,#0f2b48 0,transparent 40%),radial-gradient(circle at 90% 90%,#1e1b4b 0,transparent 40%),var(--bg);color:var(--text);min-height:100vh}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;transition:all .2s ease}
+button:active{transform:scale(.97)}
+
+/* VISTAS */
+.view-mode{display:none;min-height:100vh}
+.view-mode.active{display:block}
+
+/* ROLES */
+.role-selector{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;text-align:center}
+.role-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;width:100%;max-width:900px;margin-top:30px}
+.role-card{background:var(--panel);border:2px solid var(--border);border-radius:24px;padding:30px 20px;display:flex;flex-direction:column;align-items:center;gap:15px;cursor:pointer;box-shadow:var(--shadow)}
+.role-card:hover{border-color:var(--primary);transform:translateY(-4px)}
+.role-icon{font-size:50px}
+
+/* UI GENERAL */
+.btn{padding:12px 18px;border-radius:12px;color:#040914;background:var(--primary);font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.secondary{background:var(--secondary);color:#fff}
+.btn.gold{background:var(--accent);color:#040914}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.dark{background:var(--panel2);color:#fff;border:1px solid var(--border)}
+.btn.full{width:100%}
+
+.card{background:linear-gradient(145deg,rgba(18,34,58,.9),rgba(10,21,37,.9));border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.form{display:grid;gap:12px}
+.form input,.form select{width:100%;background:#081322;color:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;font-size:16px}
+
+/* OPCIONES MÚLTIPLES BOTONES */
+.options-grid{display:grid;gap:12px;margin-top:15px}
+.btn-option{background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:16px;border-radius:14px;font-weight:600;font-size:14px;text-align:left;display:flex;align-items:center;gap:12px;transition:all .2s ease}
+.btn-option:hover:not(:disabled){border-color:var(--primary);background:#1a2e4a}
+.btn-option:disabled{opacity:.6;cursor:not-allowed}
+.btn-option .opt-letter{background:var(--border);color:var(--primary);width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+
+/* PROYECTOR */
+.projector-layout{display:grid;grid-template-rows:auto 1fr;min-height:100vh;padding:24px;gap:20px}
+.projector-header{display:flex;justify-content:space-between;align-items:center;background:var(--panel);padding:20px 30px;border-radius:24px;border:1px solid var(--border)}
+.pin-badge{background:var(--gold);color:#000;padding:10px 20px;border-radius:16px;font-weight:900;font-size:28px;letter-spacing:2px}
+.live-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
+.timer-display{font-family:var(--font-mono);font-size:50px;font-weight:900;text-align:center;color:var(--accent);letter-spacing:2px}
+.timer-display.low{color:var(--danger);animation:pulse 1s infinite}
+@keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
+
+/* RULETA */
+.roulette-container{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.roulette-wrapper{position:relative;width:340px;height:340px}
+#rouletteWheel{width:100%;height:100%;border-radius:50%;box-shadow:0 0 30px rgba(99,102,241,0.2)}
+.wheel-pointer{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:24px solid var(--danger);filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));z-index:10}
+
+/* RANKING */
+.ranking-table{width:100%;border-collapse:collapse}
+.ranking-table th,.ranking-table td{padding:16px;text-align:left;border-bottom:1px solid var(--border)}
+.ranking-table th{color:var(--muted);font-size:14px;text-transform:uppercase}
+.rank-num{font-size:24px;font-weight:900;color:var(--gold)}
+
+/* DASHBOARD STATS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px}
+.kpi-card{background:#06101e;padding:20px;border-radius:16px;border:1px solid var(--border);text-align:center}
+.kpi-val{font-size:32px;font-weight:900;color:var(--primary);margin-top:5px}
+
+/* ESTUDIANTE */
+.student-layout{max-width:500px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.student-header{display:flex;justify-content:space-between;align-items:center;background:var(--panel);padding:14px 18px;border-radius:18px;border:1px solid var(--border)}
+.stat-pill{background:#081322;padding:6px 12px;border-radius:20px;border:1px solid var(--border);font-size:13px;font-weight:700}
+.hint-box{background:rgba(245,158,11,.1);border:1px solid var(--accent);color:var(--gold);padding:12px;border-radius:12px;font-size:13px;margin-top:10px}
+
+/* DOCENTE */
+.teacher-layout{padding:24px;max-width:1200px;margin:0 auto}
+.pedagogical-box{background:rgba(56,189,248,.05);border:1px solid var(--primary);border-radius:16px;padding:20px;margin-bottom:20px}
+
+.toast{position:fixed;bottom:20px;right:20px;left:20px;max-width:400px;margin:auto;background:var(--panel2);border:1px solid var(--primary);padding:14px 18px;border-radius:14px;color:#fff;text-align:center;box-shadow:var(--shadow);display:none;z-index:99}
+.toast.show{display:block;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.badge-bloom{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:800;background:rgba(56,189,248,.15);color:var(--primary);border:1px solid var(--primary)}
+.wrong-item{background:rgba(244,63,94,.1);border:1px solid var(--danger);padding:12px;border-radius:12px;margin-top:8px;font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- SELECCIÓN DE ROL -->
+<div id="viewRole" class="view-mode active">
+  <div class="role-selector">
+    <h1 style="font-size:42px;margin:0">DB <span>QUEST 2.0</span></h1>
+    <p style="color:var(--muted);margin-top:8px">Plataforma Gamificada de Bases de Datos con Evaluación Automatizada</p>
+    
+    <div class="role-card-grid">
+      <div class="role-card" onclick="startProjector()">
+        <div class="role-icon">📺</div>
+        <h2>Modo Proyector</h2>
+        <p style="color:var(--muted);font-size:13px">Proyecta la ruleta, el reto activo y la tabla de posiciones en tiempo real.</p>
+        <button class="btn gold full">Iniciar Proyector</button>
+      </div>
+
+      <div class="role-card" onclick="startStudent()">
+        <div class="role-icon">📱</div>
+        <h2>Modo Estudiante</h2>
+        <p style="color:var(--muted);font-size:13px">Ingresa con PIN, responde retos con opción múltiple y gana XP.</p>
+        <button class="btn full">Unirse como Alumno</button>
+      </div>
+
+      <div class="role-card" onclick="startTeacher()">
+        <div class="role-icon">👨‍🏫</div>
+        <h2>Control Docente</h2>
+        <p style="color:var(--muted);font-size:13px">Gira la ruleta remote, supervisa analíticas y revisa el impacto pedagógico.</p>
+        <button class="btn secondary full">Panel del Docente</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VISTA PROYECTOR -->
+<div id="viewProjector" class="view-mode">
+  <div class="projector-layout">
+    <header class="projector-header">
+      <div>
+        <h1 style="margin:0;font-size:28px">DB QUEST 2.0 <span style="font-size:16px;color:var(--primary)">• RULETA AUTOMATIZADA</span></h1>
+        <p style="margin:4px 0 0;color:var(--muted)">Únanse ingresando el PIN de la sala</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:15px">
+        <span>PIN DE SALA:</span>
+        <div id="roomPinDisplay" class="pin-badge">------</div>
+      </div>
+    </header>
+
+    <div id="projectorMainContent" class="live-grid">
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative">
+        <div id="rouletteContainer" class="roulette-container">
+          <div class="roulette-wrapper">
+            <div class="wheel-pointer"></div>
+            <canvas id="rouletteWheel" width="600" height="600"></canvas>
+          </div>
+        </div>
+
+        <div id="projectorMissionBox" style="display:none;width:100%;margin-top:15px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span id="projCategoryBadge" style="font-size:18px;font-weight:900;color:var(--gold)">CATEGORÍA</span>
+            <span id="projBloomBadge" class="badge-bloom">Bloom</span>
+          </div>
+          <h2 id="projQuestionTitle" style="font-size:20px;margin:12px 0;line-height:1.4;white-space:pre-wrap">Pregunta...</h2>
+          
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#06101e;padding:15px 20px;border-radius:16px;border:1px solid var(--border);margin-top:10px">
+            <div>
+              <span style="font-size:12px;color:var(--muted)">RECOMPENSA MÁXIMA</span>
+              <div id="projRewardBadge" style="font-weight:800;color:var(--success)">⚡ +100 XP</div>
+            </div>
+            <div>
+              <div id="projTimer" class="timer-display">01:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">🏆 Tabla de Posiciones</h2>
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Equipo</th>
+              <th>Nivel</th>
+              <th>XP</th>
+            </tr>
+          </thead>
+          <tbody id="projRankingBody">
+            <tr><td colspan="4" style="text-align:center;color:var(--muted)">Sin equipos conectados...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PANTALLA FINAL PROYECTOR -->
+    <div id="projectorEndContent" class="card" style="display:none;text-align:center;padding:40px">
+      <h1>🏆 ¡CONCURSO FINALIZADO! 🏆</h1>
+      <p style="color:var(--muted);margin-top:8px">Resultados finales de la sesión</p>
+      
+      <div style="max-width:600px;margin:30px auto">
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th>Puesto</th>
+              <th>Equipo</th>
+              <th>Nivel Final</th>
+              <th>Total XP</th>
+            </tr>
+          </thead>
+          <tbody id="projEndRankingBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VISTA ESTUDIANTE -->
+<div id="viewStudent" class="view-mode">
+  <div class="student-layout">
+    <div id="studentLoginCard" class="card">
+      <h2 style="margin-top:0">🚀 Entrar a la Misión</h2>
+      <form class="form" onsubmit="joinRoom(event)">
+        <div>
+          <label style="font-size:12px;color:var(--muted)">PIN DE SALA</label>
+          <input id="stuPin" required placeholder="Ej: 4821" style="text-align:center;font-size:22px;letter-spacing:3px;font-weight:800">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--muted)">Nombre del Equipo</label>
+          <input id="stuTeamName" required placeholder="Ej: SQL Dragons">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--muted)">Avatar / Emoji</label>
+          <select id="stuEmoji">
+            <option>🐉 Dragons</option>
+            <option>⚡ Cyber</option>
+            <option>🧠 Masters</option>
+            <option>🤖 Bots</option>
+            <option>🚀 Hunters</option>
+          </select>
+        </div>
+        <button class="btn full gold" style="margin-top:10px">Unirse a la Batalla</button>
+      </form>
+    </div>
+
+    <div id="studentMainCard" class="card" style="display:none">
+      <header class="student-header">
+        <div>
+          <strong id="stuTeamDisplay" style="font-size:18px">Mi Equipo</strong>
+          <div id="stuLvlDisplay" style="font-size:12px;color:var(--primary);font-weight:800">Nivel 1</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <span class="stat-pill" id="stuXpDisplay" style="color:var(--gold)">⚡ 0 XP</span>
+          <span class="stat-pill" id="stuCoinsDisplay" style="color:var(--success)">💰 50</span>
+        </div>
+      </header>
+
+      <div style="margin-top:20px">
+        <div style="display:flex;justify-content:space-between">
+          <span id="stuCatDisplay" style="color:var(--gold);font-size:12px;font-weight:800">CATEGORÍA</span>
+          <span id="stuBloomDisplay" class="badge-bloom">Bloom</span>
+        </div>
+        <h3 id="stuQuestionTitle" style="margin:10px 0;font-size:16px;white-space:pre-wrap">Esperando el giro de la ruleta...</h3>
+      </div>
+
+      <div id="stuHintContainer" style="display:none" class="hint-box">
+        💡 <strong>Pista:</strong> <span id="stuHintText"></span>
+      </div>
+
+      <!-- OPCIONES MÚLTIPLES AUTO-EVALUABLES -->
+      <div id="stuOptionsBox" class="options-grid">
+        <p style="color:var(--muted);font-size:13px;text-align:center">Las opciones aparecerán al girar la ruleta...</p>
+      </div>
+
+      <div style="margin-top:15px">
+        <button id="stuHintBtn" class="btn dark full" style="font-size:12px" onclick="useHint()">💡 Pedir Pista (-20 DataCoins)</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA FINAL ESTUDIANTE -->
+    <div id="studentEndCard" class="card" style="display:none">
+      <h2 style="text-align:center">🏁 Concurso Finalizado</h2>
+      <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:4px">Resumen de desempeño de tu equipo</p>
+
+      <div style="background:#06101e;padding:15px;border-radius:14px;border:1px solid var(--border);margin:15px 0;text-align:center">
+        <div style="font-size:12px;color:var(--muted)">POSICIÓN FINAL EN EL RANKING</div>
+        <div id="stuEndRankDisplay" style="font-size:36px;font-weight:900;color:var(--gold)">#--</div>
+        <div id="stuEndXpDisplay" style="font-size:14px;color:var(--primary);font-weight:700">0 XP Totales</div>
+      </div>
+
+      <h3 style="font-size:15px;margin-top:15px">❌ Respuestas Incorrectas a Repasar:</h3>
+      <div id="stuWrongList" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+        <p style="color:var(--success);font-size:13px">¡Excelente! No tuviste respuestas erróneas registradas.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VISTA DOCENTE -->
+<div id="viewTeacher" class="view-mode">
+  <div class="teacher-layout">
+    <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <h1 style="margin:0">👨‍🏫 Control del Profesor</h1>
+        <p style="color:var(--muted);margin:4px 0 0">Gira la ruleta, monitorea la automatización y consulta analíticas</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn danger" onclick="endGameTeacher()">🏁 Finalizar Concurso</button>
+        <div class="pin-badge" id="teacherPinDisplay">PIN: ----</div>
+      </div>
+    </header>
+
+    <!-- SECCIÓN DE IMPACTO PEDAGÓGICO -->
+    <div class="pedagogical-box">
+      <h3 style="color:var(--primary);display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        🎯 Objetivo Didáctico e Impacto Pedagógico
+      </h3>
+      <p style="font-size:13px;line-height:1.6;color:#d1e2f7">
+        <strong>Objetivo:</strong> Consolidar conocimientos teórico-prácticos sobre diseño, administración, lenguaje SQL, seguridad y transacciones en Bases de Datos mediante evaluación formativa gamificada.<br>
+        <strong>Impacto Pedagógico:</strong> Integra el <em>Gamified Active Learning</em> (Aprendizaje Activo Gamificado) y la <em>Taxonomía de Bloom</em> (desde Recordar hasta Crear). Al utilizar evaluación automatizada con opción múltiple y retroalimentación inmediata, se estimula la agilidad mental, se reduce la carga cognitiva de revisión en clase y se activa la reactivación de memoria a corto/mediano plazo a través de la gamificación basada en recompensas (XP y DataCoins).
+      </p>
+    </div>
+
+    <div id="teacherLivePanel" class="grid" style="grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <h3>🎡 Control de Ruleta en Vivo</h3>
+        <p style="color:var(--muted);font-size:13px">Gira la ruleta del proyector. Los alumnos responderán desde sus dispositivos y el sistema evaluará automáticamente.</p>
+        <button class="btn gold full" style="font-size:18px;padding:16px;margin-top:12px" onclick="spinRouletteRemote()">🎰 GIRAR RULETA EN VIVO</button>
+        
+        <div style="margin-top:20px;padding:15px;background:#06101e;border-radius:14px;border:1px solid var(--border)">
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase">Misión Activa:</span>
+          <div id="teachCurrentCategory" style="font-weight:800;color:var(--gold);margin-top:4px">Ninguna</div>
+          <div id="teachCurrentQuestion" style="font-size:13px;color:var(--text);margin-top:6px;white-space:pre-wrap">Presiona el botón para girar.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚡ Registro de Respuestas Automatizadas</h3>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:10px">El sistema califica automáticamente en tiempo real:</p>
+        <div id="teacherFeed" style="max-height:380px;overflow-y:auto">
+          <p style="color:var(--muted);font-size:13px">Esperando respuestas de los equipos...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD FINAL DOCENTE -->
+    <div id="teacherDashboard" class="card" style="display:none;margin-top:20px">
+      <h2>📊 Dashboard General del Concurso</h2>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Métricas agregadas y análisis de rendimiento</p>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div style="font-size:12px;color:var(--muted)">EQUIPOS PARTICIPANTES</div>
+          <div id="kpiTeams" class="kpi-val">0</div>
+        </div>
+        <div class="kpi-card">
+          <div style="font-size:12px;color:var(--muted)">RESPUESTAS CORRECTAS</div>
+          <div id="kpiCorrect" class="kpi-val" style="color:var(--success)">0</div>
+        </div>
+        <div class="kpi-card">
+          <div style="font-size:12px;color:var(--muted)">RESPUESTAS INCORRECTAS</div>
+          <div id="kpiWrong" class="kpi-val" style="color:var(--danger)">0</div>
+        </div>
+        <div class="kpi-card">
+          <div style="font-size:12px;color:var(--muted)">MEDIA DE XP / EQUIPO</div>
+          <div id="kpiAvgXp" class="kpi-val" style="color:var(--gold)">0</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:25px;margin-bottom:12px">🏆 Ranking Final de Equipos</h3>
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th>Posición</th>
+            <th>Equipo</th>
+            <th>Nivel</th>
+            <th>Correctas</th>
+            <th>Incorrectas</th>
+            <th>Total XP</th>
+          </tr>
+        </thead>
+        <tbody id="teachDashboardRankingBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ---------- BASE DE DATOS DE CATEGORÍAS ----------
+const dbCategories = [
+  { id: "conexion", name: "🔌 Conexión", color: "#38bdf8" },
+  { id: "usuarios", name: "👤 Usuarios", color: "#818cf8" },
+  { id: "privilegios", name: "🔐 Privilegios", color: "#f59e0b" },
+  { id: "estructura", name: "🏗️ Estructura", color: "#10b981" },
+  { id: "sql", name: "💻 SQL", color: "#ec4899" },
+  { id: "consultas", name: "🔎 Consultas", color: "#8b5cf6" },
+  { id: "seguridad", name: "🛡️ Seguridad", color: "#f43f5e" },
+  { id: "transacciones", name: "🔄 Transacciones", color: "#06b6d4" }
+];
+
+// ---------- BANCO DE PREGUNTAS CON OPCIÓN MÚLTIPLE (3 OPCIONES Y ÍNDICE CORRECTO) ----------
+const dbQuestions = {
+  conexion: [
+    { 
+      q: "¿Qué datos se necesitan típicamente para conectar una app con MySQL/MariaDB?", 
+      options: [
+        "Servidor, BD, usuario, contraseña y puerto",
+        "Nombre del archivo, extensión y directorio raíz",
+        "Solamente la dirección IP y la clave de acceso"
+      ],
+      correctIndex: 0, bloom: "Recordar", xp: 100, hint: "Pensar en las 5 credenciales de la cadena DSN." 
+    },
+    { 
+      q: "¿Qué representa la dirección de red 'localhost'?", 
+      options: [
+        "El servidor de la nube central de Google",
+        "El equipo o servidor local donde se ejecuta el servicio",
+        "Una conexión remota hacia una BD externa"
+      ],
+      correctIndex: 1, bloom: "Recordar", xp: 100, hint: "Dirección IP loopback 127.0.0.1." 
+    },
+    { 
+      q: "¿Qué ocurre si intentas conectar tu app y el servidor MariaDB está apagado?", 
+      options: [
+        "La base de datos se crea automáticamente",
+        "Se lanzará una excepción/error de conexión no establecida",
+        "La consulta devuelve valores vacíos pero no da error"
+      ],
+      correctIndex: 1, bloom: "Comprender", xp: 120, hint: "Error tipificado como PDOException / Connection refused." 
+    }
+  ],
+  usuarios: [
+    { 
+      q: "¿Cuál es el comando DDL para crear un usuario en el servidor?", 
+      options: [
+        "ADD USER 'alumno'@'localhost'",
+        "CREATE USER 'alumno'@'localhost' IDENTIFIED BY 'pass';",
+        "MAKE USER 'alumno'@'localhost'"
+      ],
+      correctIndex: 1, bloom: "Aplicar", xp: 140, hint: "Sintaxis estándar DDL de gestión de accesos." 
+    },
+    { 
+      q: "¿Cuál es el comando utilizado para eliminar una cuenta de usuario?", 
+      options: [
+        "DELETE USER 'usuario'@'localhost';",
+        "REMOVE USER 'usuario'@'localhost';",
+        "DROP USER 'usuario'@'localhost';"
+      ],
+      correctIndex: 2, bloom: "Recordar", xp: 100, hint: "Instrucción DDL para remover objetos de catálogo." 
+    }
+  ],
+  privilegios: [
+    { 
+      q: "¿Qué comando DCL permite otorgar permisos a un usuario?", 
+      options: [
+        "GRANT",
+        "GIVE",
+        "ALLOW"
+      ],
+      correctIndex: 0, bloom: "Recordar", xp: 100, hint: "Comando DCL de autorización de accesos." 
+    },
+    { 
+      q: "¿Qué sentencia otorga solo permisos de lectura en la BD 'escuela'?", 
+      options: [
+        "GRANT ALL ON escuela.* TO 'docente'@'localhost';",
+        "GRANT SELECT ON escuela.* TO 'docente'@'localhost';",
+        "GRANT READ ON escuela.* TO 'docente'@'localhost';"
+      ],
+      correctIndex: 1, bloom: "Aplicar", xp: 140, hint: "Privilegio de lectura = SELECT." 
+    },
+    { 
+      q: "¿Qué principio de seguridad se viola si das ALL PRIVILEGES a un usuario que solo consulta?", 
+      options: [
+        "Principio de Mínimo Privilegio",
+        "Principio de Alta Disponibilidad",
+        "Principio de Autenticación Doble Factor"
+      ],
+      correctIndex: 0, bloom: "Evaluar", xp: 180, hint: "Limitar permisos a lo estrictamente necesario." 
+    }
+  ],
+  estructura: [
+    { 
+      q: "¿Cuál es la función principal de una Clave Primaria (Primary Key)?", 
+      options: [
+        "Permitir duplicar filas rápidamente",
+        "Identificar de manera única e inequívoca cada registro de la tabla",
+        "Guardar contraseñas encriptadas"
+      ],
+      correctIndex: 1, bloom: "Recordar", xp: 100, hint: "Garantiza univalidez y evita valores nulos." 
+    },
+    { 
+      q: "Tienes ALUMNOS (id, nombre, id_grupo) y GRUPOS (id_grupo, nombre). ¿Cuál es la Clave Foránea (FK)?", 
+      options: [
+        "ALUMNOS.nombre",
+        "GRUPOS.id_grupo",
+        "ALUMNOS.id_grupo referenciando a GRUPOS"
+      ],
+      correctIndex: 2, bloom: "Analizar", xp: 160, hint: "El campo en la tabla hija que vincula a la tabla padre." 
+    }
+  ],
+  sql: [
+    { 
+      q: "¿Qué comando DML modifica registros existentes en una tabla?", 
+      options: [
+        "MODIFY",
+        "UPDATE",
+        "CHANGE"
+      ],
+      correctIndex: 1, bloom: "Recordar", xp: 100, hint: "Se utiliza en conjunto con SET y WHERE." 
+    },
+    { 
+      q: "Sintaxis para insertar un nuevo registro en la tabla 'alumnos':", 
+      options: [
+        "INSERT INTO alumnos (nombre) VALUES ('Juan');",
+        "ADD INTO alumnos VALUES ('Juan');",
+        "PUSH TO alumnos NAME='Juan';"
+      ],
+      correctIndex: 0, bloom: "Aplicar", xp: 140, hint: "Sintaxis DML de inserción." 
+    }
+  ],
+  consultas: [
+    { 
+      q: "¿Cuál es la diferencia fundamental entre la cláusula WHERE y HAVING?", 
+      options: [
+        "No hay diferencia, son idénticas",
+        "WHERE filtra registros individuales; HAVING filtra los grupos del GROUP BY",
+        "HAVING se ejecuta antes de consultar la tabla"
+      ],
+      correctIndex: 1, bloom: "Analizar", xp: 160, hint: "Una opera antes del agrupamiento y la otra sobre funciones de agregación." 
+    },
+    { 
+      q: "¿Qué cláusula ordena los resultados devueltos por una consulta?", 
+      options: [
+        "SORT BY",
+        "ORDER BY",
+        "GROUP BY"
+      ],
+      correctIndex: 1, bloom: "Recordar", xp: 100, hint: "Usa palabras clave ASC o DESC." 
+    }
+  ],
+  seguridad: [
+    { 
+      q: "¿Qué técnica previene eficazmente los ataques de Inyección SQL (SQLi)?", 
+      options: [
+        "Concatenar directamente las variables en la cadena SQL",
+        "Usar Sentencias Preparadas (Prepared Statements con placeholders)",
+        "Cambiar el puerto por defecto de MySQL"
+      ],
+      correctIndex: 1, bloom: "Aplicar", xp: 140, hint: "Separa el código ejecutable de la entrada de datos." 
+    },
+    { 
+      q: "¿Por qué es riesgoso que la app web se conecte como el usuario 'root'?", 
+      options: [
+        "Porque 'root' hace las consultas más lentas",
+        "Porque ante un SQLi el atacante ganaría control total del servidor de base de datos",
+        "Porque 'root' no permite hacer SELECT"
+      ],
+      correctIndex: 1, bloom: "Evaluar", xp: 180, hint: "Pensar en el impacto máximo de una vulnerabilidad." 
+    }
+  ],
+  transacciones: [
+    { 
+      q: "¿Qué instrucción revierte y deshace todos los cambios de una transacción ante un error?", 
+      options: [
+        "COMMIT",
+        "ROLLBACK",
+        "UNDO"
+      ],
+      correctIndex: 1, bloom: "Recordar", xp: 100, hint: "Restablece el estado previo de la base de datos." 
+    },
+    { 
+      q: "¿Qué instrucción confirma de forma definitiva los cambios realizados en una transacción?", 
+      options: [
+        "COMMIT;",
+        "SAVE;",
+        "APPLY;"
+      ],
+      correctIndex: 0, bloom: "Recordar", xp: 100, hint: "Finaliza con éxito el bloque ACID." 
+    }
+  ]
+};
+
+// ---------- ESTADO GLOBAL ----------
+let roomPin = Math.floor(1000 + Math.random() * 9000).toString();
+let mode = ''; 
+let currentAngle = 0;
+let gameState = {
+  teams: {},
+  currentQuestion: null,
+  timerVal: 60,
+  timerInterval: null,
+  totalCorrect: 0,
+  totalWrong: 0,
+  isEnded: false
+};
+
+function showView(viewId) {
+  document.querySelectorAll('.view-mode').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// SINTETIZADOR DE SONIDOS
+function playSound(type) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'tick') {
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.03);
+    } else if (type === 'alarm') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'success') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'error') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+  } catch (e) {}
+}
+
+// DIBUJO Y FÍSICA DE RULETA
+function drawWheel() {
+  const canvas = document.getElementById('rouletteWheel');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const numSegments = dbCategories.length;
+  const arcSize = (2 * Math.PI) / numSegments;
+  const radius = canvas.width / 2;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < numSegments; i++) {
+    const angle = currentAngle + i * arcSize;
+    ctx.beginPath();
+    ctx.fillStyle = dbCategories[i].color;
+    ctx.moveTo(radius, radius);
+    ctx.arc(radius, radius, radius - 10, angle, angle + arcSize);
+    ctx.lineTo(radius, radius);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(radius, radius);
+    ctx.rotate(angle + arcSize / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 17px 'Plus Jakarta Sans', sans-serif";
+    ctx.fillText(`${dbCategories[i].name}`, radius - 25, 6);
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.arc(radius, radius, 45, 0, 2 * Math.PI);
+  ctx.fillStyle = "#0f172a";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+}
+
+// ---------- MODO PROYECTOR ----------
+function startProjector() {
+  mode = 'projector';
+  showView('viewProjector');
+  document.getElementById('roomPinDisplay').textContent = roomPin;
+  drawWheel();
+
+  const bc = new BroadcastChannel('dbquest_channel_' + roomPin);
+  bc.onmessage = (e) => handleProjectorData(e.data);
+}
+
+function handleProjectorData(data) {
+  if (data.type === 'JOIN_TEAM') {
+    if (!gameState.teams[data.team.name]) {
+      gameState.teams[data.team.name] = { name: data.team.name, emoji: data.team.emoji, xp: 0, coins: 50, level: 1, correct: 0, wrong: 0, wrongList: [] };
+      toast(`¡Equipo unido: ${data.team.emoji} ${data.team.name}!`);
+      updateRankingUI();
+    }
+  } else if (data.type === 'SPIN_ROULETTE') {
+    animateRouletteExact(data.categoryIndex, data.question);
+  } else if (data.type === 'AWARD_XP') {
+    if (gameState.teams[data.teamName]) {
+      const t = gameState.teams[data.teamName];
+      t.xp += data.xp;
+      t.coins += (data.coins || 0);
+      t.level = Math.floor(t.xp / 250) + 1;
+      t.correct++;
+      updateRankingUI();
+    }
+  } else if (data.type === 'RECORD_WRONG') {
+    if (gameState.teams[data.teamName]) {
+      const t = gameState.teams[data.teamName];
+      t.wrong++;
+      t.wrongList.push(data.question);
+    }
+  } else if (data.type === 'END_GAME') {
+    showProjectorEndScreen();
+  }
+}
+
+function animateRouletteExact(targetIndex, question) {
+  document.getElementById('projectorMissionBox').style.display = 'none';
+  document.getElementById('rouletteContainer').style.display = 'flex';
+
+  const numSegments = dbCategories.length;
+  const arcSize = (2 * Math.PI) / numSegments;
+  const randomExtraRounds = 5 + Math.floor(Math.random() * 4);
+  const targetAngle = (3 * Math.PI / 2) - (targetIndex * arcSize) - (arcSize / 2);
+  const totalRotation = (2 * Math.PI * randomExtraRounds) + (targetAngle - (currentAngle % (2 * Math.PI)));
+
+  const duration = 3800;
+  const startAngle = currentAngle;
+  const startTime = performance.now();
+
+  function animate(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    
+    currentAngle = startAngle + totalRotation * easeOut;
+    drawWheel();
+    playSound('tick');
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      playSound('success');
+      setTimeout(() => {
+        document.getElementById('rouletteContainer').style.display = 'none';
+        showQuestionOnProjector(question);
+      }, 500);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function showQuestionOnProjector(q) {
+  gameState.currentQuestion = q;
+  const box = document.getElementById('projectorMissionBox');
+  box.style.display = 'block';
+
+  document.getElementById('projCategoryBadge').textContent = q.catName;
+  document.getElementById('projBloomBadge').textContent = `Bloom: ${q.bloom}`;
+  document.getElementById('projQuestionTitle').textContent = q.q;
+  document.getElementById('projRewardBadge').textContent = `⚡ +${q.xp} XP`;
+
+  startTimer(60);
+}
+
+function updateRankingUI() {
+  const tbody = document.getElementById('projRankingBody');
+  const sorted = Object.values(gameState.teams).sort((a,b) => b.xp - a.xp);
+  if (!sorted.length) return;
+
+  tbody.innerHTML = sorted.map((t, i) => `
+    <tr>
+      <td class="rank-num">${i + 1}</td>
+      <td><strong>${t.emoji} ${t.name}</strong></td>
+      <td><span style="color:var(--primary)">LVL ${t.level}</span></td>
+      <td><strong>${t.xp} XP</strong></td>
+    </tr>
+  `).join('');
+}
+
+function showProjectorEndScreen() {
+  document.getElementById('projectorMainContent').style.display = 'none';
+  document.getElementById('projectorEndContent').style.display = 'block';
+
+  const tbody = document.getElementById('projEndRankingBody');
+  const sorted = Object.values(gameState.teams).sort((a,b) => b.xp - a.xp);
+
+  tbody.innerHTML = sorted.map((t, i) => `
+    <tr>
+      <td class="rank-num">#${i + 1}</td>
+      <td><strong>${t.emoji} ${t.name}</strong></td>
+      <td>LVL ${t.level}</td>
+      <td><strong>${t.xp} XP</strong></td>
+    </tr>
+  `).join('');
+}
+
+function startTimer(seconds) {
+  clearInterval(gameState.timerInterval);
+  gameState.timerVal = seconds;
+  const display = document.getElementById('projTimer');
+
+  gameState.timerInterval = setInterval(() => {
+    gameState.timerVal--;
+    const m = Math.floor(gameState.timerVal / 60).toString().padStart(2, '0');
+    const s = (gameState.timerVal % 60).toString().padStart(2, '0');
+    display.textContent = `${m}:${s}`;
+
+    if (gameState.timerVal <= 10 && gameState.timerVal > 0) {
+      display.classList.add('low');
+      playSound('tick');
+    } else {
+      display.classList.remove('low');
+    }
+
+    if (gameState.timerVal <= 0) {
+      clearInterval(gameState.timerInterval);
+      display.textContent = "00:00";
+      playSound('alarm');
+    }
+  }, 1000);
+}
+
+// ---------- MODO ESTUDIANTE ----------
+function startStudent() {
+  mode = 'student';
+  showView('viewStudent');
+}
+
+let myTeam = null;
+let stuChannel = null;
+let currentQuestionObj = null;
+
+function joinRoom(e) {
+  e.preventDefault();
+  const pin = document.getElementById('stuPin').value.trim();
+  const name = document.getElementById('stuTeamName').value.trim();
+  const emoji = document.getElementById('stuEmoji').value.split(' ')[0];
+
+  if (!pin || !name) return;
+
+  myTeam = { name, emoji, xp: 0, coins: 50, level: 1, wrongList: [] };
+  stuChannel = new BroadcastChannel('dbquest_channel_' + pin);
+
+  stuChannel.postMessage({ type: 'JOIN_TEAM', team: myTeam });
+
+  document.getElementById('studentLoginCard').style.display = 'none';
+  document.getElementById('studentMainCard').style.display = 'block';
+  document.getElementById('stuTeamDisplay').textContent = `${emoji} ${name}`;
+
+  stuChannel.onmessage = (e) => {
+    if (e.data.type === 'SPIN_ROULETTE') {
+      currentQuestionObj = e.data.question;
+      document.getElementById('stuCatDisplay').textContent = currentQuestionObj.catName;
+      document.getElementById('stuBloomDisplay').textContent = `Bloom: ${currentQuestionObj.bloom}`;
+      document.getElementById('stuQuestionTitle').textContent = currentQuestionObj.q;
+      
+      // Renderizar Opciones Múltiples Botones
+      renderOptionsButtons(currentQuestionObj.options);
+
+      // Reset Pista
+      document.getElementById('stuHintContainer').style.display = 'none';
+      document.getElementById('stuHintBtn').disabled = false;
+
+      toast("¡Nueva misión desplegada!");
+    } else if (e.data.type === 'AWARD_XP' && e.data.teamName === myTeam.name) {
+      myTeam.xp += e.data.xp;
+      myTeam.coins += (e.data.coins || 0);
+      myTeam.level = Math.floor(myTeam.xp / 250) + 1;
+
+      document.getElementById('stuXpDisplay').textContent = `⚡ ${myTeam.xp} XP`;
+      document.getElementById('stuCoinsDisplay').textContent = `💰 ${myTeam.coins}`;
+      document.getElementById('stuLvlDisplay').textContent = `Nivel ${myTeam.level}`;
+
+      playSound('success');
+      toast(`¡Correcto! Ganaste +${e.data.xp} XP 🎉`);
+    } else if (e.data.type === 'RECORD_WRONG' && e.data.teamName === myTeam.name) {
+      myTeam.wrongList.push(e.data.question);
+      playSound('error');
+      toast("❌ Respuesta Incorrecta.");
+    } else if (e.data.type === 'END_GAME') {
+      showStudentEndScreen(e.data.rankings);
+    }
+  };
+
+  toast("¡Conectado exitosamente!");
+}
+
+function renderOptionsButtons(options) {
+  const box = document.getElementById('stuOptionsBox');
+  const letters = ['A', 'B', 'C'];
+  
+  box.innerHTML = options.map((opt, idx) => `
+    <button class="btn-option" onclick="selectOption(${idx})">
+      <span class="opt-letter">${letters[idx]}</span>
+      <span>${opt}</span>
+    </button>
+  `).join('');
+}
+
+function selectOption(selectedIndex) {
+  if (!currentQuestionObj || !stuChannel) return;
+
+  // Deshabilitar todos los botones de opciones
+  const btns = document.querySelectorAll('.btn-option');
+  btns.forEach(b => b.disabled = true);
+
+  const isCorrect = (selectedIndex === currentQuestionObj.correctIndex);
+  const selectedText = currentQuestionObj.options[selectedIndex];
+
+  // Evaluar e informar al sistema de forma automática
+  stuChannel.postMessage({
+    type: 'AUTO_EVALUATE_ANSWER',
+    teamName: myTeam.name,
+    isCorrect: isCorrect,
+    selectedText: selectedText,
+    questionObj: currentQuestionObj
+  });
+
+  if (isCorrect) {
+    btns[selectedIndex].style.borderColor = 'var(--success)';
+    btns[selectedIndex].style.background = 'rgba(16,185,129,0.2)';
+  } else {
+    btns[selectedIndex].style.borderColor = 'var(--danger)';
+    btns[selectedIndex].style.background = 'rgba(244,63,94,0.2)';
+    // Mostrar la opción correcta
+    if (btns[currentQuestionObj.correctIndex]) {
+      btns[currentQuestionObj.correctIndex].style.borderColor = 'var(--success)';
+    }
+  }
+}
+
+function useHint() {
+  if (myTeam.coins < 20) return toast("No tienes suficientes DataCoins");
+  if (!currentQuestionObj) return toast("Espera a que se seleccione una pregunta");
+
+  myTeam.coins -= 20;
+  document.getElementById('stuCoinsDisplay').textContent = `💰 ${myTeam.coins}`;
+  
+  document.getElementById('stuHintText').textContent = currentQuestionObj.hint || "Analiza detenidamente la opción con mejor sintaxis.";
+  document.getElementById('stuHintContainer').style.display = 'block';
+  document.getElementById('stuHintBtn').disabled = true;
+
+  toast("Pista desbloqueada (-20 DataCoins)");
+}
+
+function showStudentEndScreen(rankings) {
+  document.getElementById('studentMainCard').style.display = 'none';
+  document.getElementById('studentEndCard').style.display = 'block';
+
+  const myRank = rankings.findIndex(r => r.name === myTeam.name) + 1;
+  document.getElementById('stuEndRankDisplay').textContent = `#${myRank || '-'}`;
+  document.getElementById('stuEndXpDisplay').textContent = `${myTeam.xp} XP Totales • Nivel ${myTeam.level}`;
+
+  const wrongContainer = document.getElementById('stuWrongList');
+  if (myTeam.wrongList.length > 0) {
+    wrongContainer.innerHTML = myTeam.wrongList.map(q => `
+      <div class="wrong-item">
+        <strong>📌 Pregunta:</strong> ${q.q}<br>
+        <span style="color:var(--success);margin-top:4px;display:block"><strong>Opción Correcta:</strong> ${q.options[q.correctIndex]}</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ---------- MODO DOCENTE ----------
+function startTeacher() {
+  mode = 'teacher';
+  showView('viewTeacher');
+  document.getElementById('teacherPinDisplay').textContent = 'PIN: ' + roomPin;
+
+  const bc = new BroadcastChannel('dbquest_channel_' + roomPin);
+  bc.onmessage = (e) => {
+    if (e.data.type === 'JOIN_TEAM') {
+      if (!gameState.teams[e.data.team.name]) {
+        gameState.teams[e.data.team.name] = { name: e.data.team.name, emoji: e.data.team.emoji, xp: 0, level: 1, correct: 0, wrong: 0, wrongList: [] };
+      }
+    } else if (e.data.type === 'AUTO_EVALUATE_ANSWER') {
+      handleAutoEvaluation(e.data);
+    }
+  };
+}
+
+let activeQuestionForDocent = null;
+
+function spinRouletteRemote() {
+  const catIndex = Math.floor(Math.random() * dbCategories.length);
+  const category = dbCategories[catIndex];
+  const qList = dbQuestions[category.id];
+  const question = qList[Math.floor(Math.random() * qList.length)];
+  
+  question.catName = category.name;
+  activeQuestionForDocent = question;
+
+  document.getElementById('teachCurrentCategory').textContent = category.name;
+  document.getElementById('teachCurrentQuestion').textContent = question.q;
+
+  const bc = new BroadcastChannel('dbquest_channel_' + roomPin);
+  bc.postMessage({
+    type: 'SPIN_ROULETTE',
+    categoryIndex: catIndex,
+    question: question
+  });
+
+  toast("¡Ruleta girando en proyector!");
+}
+
+function handleAutoEvaluation(data) {
+  const { teamName, isCorrect, selectedText, questionObj } = data;
+  const q = questionObj || activeQuestionForDocent;
+  const bc = new BroadcastChannel('dbquest_channel_' + roomPin);
+
+  if (isCorrect) {
+    const xpGained = q ? q.xp : 100;
+    if (gameState.teams[teamName]) {
+      gameState.teams[teamName].xp += xpGained;
+      gameState.teams[teamName].correct++;
+      gameState.teams[teamName].level = Math.floor(gameState.teams[teamName].xp / 250) + 1;
+    }
+    gameState.totalCorrect++;
+
+    bc.postMessage({
+      type: 'AWARD_XP',
+      teamName: teamName,
+      xp: xpGained,
+      coins: 30,
+      isCorrect: true
+    });
+  } else {
+    if (gameState.teams[teamName]) {
+      gameState.teams[teamName].wrong++;
+      gameState.teams[teamName].wrongList.push(q);
+    }
+    gameState.totalWrong++;
+
+    bc.postMessage({
+      type: 'RECORD_WRONG',
+      teamName: teamName,
+      question: q
+    });
+  }
+
+  addAutoFeedItem(teamName, isCorrect, selectedText, q);
+}
+
+function addAutoFeedItem(teamName, isCorrect, selectedText, q) {
+  const feed = document.getElementById('teacherFeed');
+  if (feed.querySelector('p')) feed.innerHTML = '';
+
+  const item = document.createElement('div');
+  item.style.cssText = `
+    background: var(--panel);
+    border: 1px solid ${isCorrect ? 'var(--success)' : 'var(--danger)'};
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  `;
+
+  item.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>${teamName}</strong>
+      <span style="font-weight:800;color:${isCorrect ? 'var(--success)' : 'var(--danger)'}">
+        ${isCorrect ? '✅ ¡CORRECTO! (+'+(q?q.xp:100)+' XP)' : '❌ INCORRECTO'}
+      </span>
+    </div>
+    <div style="color:var(--muted);font-size:11px;margin-top:4px">Seleccionó: "${selectedText}"</div>
+  `;
+  feed.prepend(item);
+}
+
+function endGameTeacher() {
+  if (confirm("¿Estás seguro de finalizar el concurso? Se bloquearán las respuestas y se mostrará el Dashboard Final.")) {
+    gameState.isEnded = true;
+
+    const sortedTeams = Object.values(gameState.teams).sort((a,b) => b.xp - a.xp);
+
+    const bc = new BroadcastChannel('dbquest_channel_' + roomPin);
+    bc.postMessage({
+      type: 'END_GAME',
+      rankings: sortedTeams
+    });
+
+    document.getElementById('teacherLivePanel').style.display = 'none';
+    document.getElementById('teacherDashboard').style.display = 'block';
+
+    const totalTeams = sortedTeams.length;
+    const avgXp = totalTeams > 0 ? Math.round(sortedTeams.reduce((sum, t) => sum + t.xp, 0) / totalTeams) : 0;
+
+    document.getElementById('kpiTeams').textContent = totalTeams;
+    document.getElementById('kpiCorrect').textContent = gameState.totalCorrect;
+    document.getElementById('kpiWrong').textContent = gameState.totalWrong;
+    document.getElementById('kpiAvgXp').textContent = `${avgXp} XP`;
+
+    const tbody = document.getElementById('teachDashboardRankingBody');
+    tbody.innerHTML = sortedTeams.map((t, i) => `
+      <tr>
+        <td class="rank-num">#${i + 1}</td>
+        <td><strong>${t.emoji} ${t.name}</strong></td>
+        <td>LVL ${t.level}</td>
+        <td style="color:var(--success)"><strong>${t.correct}</strong></td>
+        <td style="color:var(--danger)"><strong>${t.wrong}</strong></td>
+        <td><strong>${t.xp} XP</strong></td>
+      </tr>
+    `).join('');
+
+    toast("🏁 Concurso Finalizado con éxito.");
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+</body>
+</html>
